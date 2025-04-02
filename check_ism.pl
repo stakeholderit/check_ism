@@ -1442,11 +1442,7 @@ sub check_controllers {
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.37' => 'controllerRollUpStatus',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.38' => 'controllerComponentStatus',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.41' => 'controllerDriverVersion',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.44' => 'controllerMinFWVersion',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.45' => 'controllerMinDriverVersion',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.55' => 'controllerStorportDriverVersion',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.56' => 'controllerMinRequiredStorportVer',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.78' => 'controllerFQDD', # was controllerNexusID under OID '1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.39'
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.1.1.78' => 'controllerFQDD',
 		);
 
 		# We use get_table() here for the odd case where a server has
@@ -1481,12 +1477,8 @@ sub check_controllers {
 			$name = $out->{controllerName} || 'Unknown controller';
 			$state = get_hashval($out->{controllerRollUpStatus}, \%ctrl_state) || 'Unknown state';
 			$status = get_snmp_status($out->{controllerComponentStatus});
-			#	    $minfw    = $out->{controllerMinFWVersion} || undef;
-			#	    $mindr    = $out->{controllerMinDriverVersion} || undef;
 			$firmware = $out->{controllerFWVersion} || 'N/A';
 			$driver = $out->{controllerDriverVersion} || 'N/A';
-			#	    $minstdr  = $out->{'controllerMinRequiredStorportVer'} || undef;
-			#	    $stdr     = $out->{controllerStorportDriverVersion} || undef;
 			$nexus = convert_nexus(($out->{controllerFQDD} || 9999));
 		}
 
@@ -1498,7 +1490,6 @@ sub check_controllers {
 		$sysinfo{'controller'}{$nexus}{'name'} = $name;
 		$sysinfo{'controller'}{$nexus}{'driver'} = $driver;
 		$sysinfo{'controller'}{$nexus}{'firmware'} = $firmware;
-		#	$sysinfo{'controller'}{$nexus}{'storport'} = $stdr;
 
 		# Store controller info for future use (SNMP)
 		if ($snmp) {
@@ -1543,45 +1534,28 @@ sub check_physical_disks {
 	my $media = undef;    # media type (e.g. HDD, SSD)
 	my $bus = undef;      # bus protocol (e.g. SAS, SATA)
 	my $spare = undef;    # spare state (e.g. global hotspare)
-	#   my $cert     = undef;  # if drive is certified or not
 	my @output = ();
 
 	if ($snmp) {
 		my %pdisk_oid
 			= (
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.2'  => 'physicalDiskName',         #was arrayDiskName
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.3'  => 'physicalDiskManufacturer', # was arrayDiskVendor
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.4'  => 'physicalDiskState',        # was arrayDiskState
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.6'  => 'physicalDiskProductID',    #was arrayDiskProductID
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.9'  => 'arrayDiskEnclosureID',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.10' => 'arrayDiskChannel',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.11' => 'physicalDiskCapacityInMB', # was arrayDiskLengthInMB
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.15' => 'arrayDiskTargetID',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.21' => 'physicalDiskBusType',         # was arrayDiskBusType
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.22' => 'physicalDiskSpareState',      # was arrayDiskSpareState
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.24' => 'physicalDiskComponentStatus', # was arrayDiskComponentStatus
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.26' => 'arrayDiskNexusID', #replaced by physicalDiskFQDD
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.31' => 'physicalDiskSmartAlertIndication', # was arrayDiskSmartAlertIndication
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.35' => 'physicalDiskMediaType',            # was arrayDiskMediaType
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.36' => 'arrayDiskDellCertified',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.54' => 'physicalDiskFQDD', # replaces arrayDiskNexusID
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.5.1.7'  => 'arrayDiskEnclosureConnectionControllerNumber',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.6.1.7'  => 'arrayDiskChannelConnectionControllerNumber',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.2'  => 'physicalDiskName',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.3'  => 'physicalDiskManufacturer',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.4'  => 'physicalDiskState',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.6'  => 'physicalDiskProductID',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.11' => 'physicalDiskCapacityInMB',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.21' => 'physicalDiskBusType',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.22' => 'physicalDiskSpareState',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.24' => 'physicalDiskComponentStatus',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.31' => 'physicalDiskSmartAlertIndication',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.35' => 'physicalDiskMediaType',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.4.1.54' => 'physicalDiskFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
 			my $arrayDiskTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.4';
-			# my $arrayDiskEnclosureConnectionControllerNumber = '1.3.6.1.4.1.674.10892.5.5.1.20.130.5.1.7';
-			# my $arrayDiskChannelConnectionControllerNumber = '1.3.6.1.4.1.674.10892.5.5.1.20.130.6.1.7';
 
 			$result = $snmp_session->get_table(-baseoid => $arrayDiskTable);
-			#my $ext1 = $snmp_session->get_table(-baseoid => $arrayDiskEnclosureConnectionControllerNumber);
-			#my $ext2 = $snmp_session->get_table(-baseoid => $arrayDiskChannelConnectionControllerNumber);
-
-			#	    if (defined $result) {
-			#		defined $ext1 && map { $$result{$_} = $$ext1{$_} } keys %{ $ext1 };
-			#		defined $ext2 && map { $$result{$_} = $$ext2{$_} } keys %{ $ext2 };
-			#	    }
 		}
 		else {
 			$result = $snmp_session->get_entries(-columns => [ keys %pdisk_oid ]);
@@ -1655,30 +1629,11 @@ sub check_physical_disks {
 			$spare = get_hashval($out->{physicalDiskSpareState}, \%spare_state) || q{};
 			$bus = get_hashval($out->{physicalDiskBusType}, \%bus_type);
 			$media = get_hashval($out->{physicalDiskMediaType}, \%media_type);
-			#$cert     = defined $out->{arrayDiskDellCertified} ? $out->{arrayDiskDellCertified} : 1;
 			$capacity = exists $out->{physicalDiskCapacityInMB}
 				? $out->{physicalDiskCapacityInMB} * 1024 ** 2 : -1;
-
-			#	    # try to find the controller where the disk belongs
-			#	    if (exists $out->{arrayDiskEnclosureConnectionControllerNumber}) {
-			#		# for disks that are attached to an enclosure
-			#		$ctrl = $snmp_controller{$out->{arrayDiskEnclosureConnectionControllerNumber}};
-			#	    }
-			#	    elsif (exists $out->{arrayDiskChannelConnectionControllerNumber}) {
-			#		# for disks that are not attached to an enclosure
-			#		$ctrl = $snmp_controller{$out->{arrayDiskChannelConnectionControllerNumber}};
-			#	    }
-			#	    else {
 			# last resort... use the nexus id (old/broken hardware)
 			$ctrl = $nexus;
 			$ctrl =~ s{\A (\d+) : .* \z}{$1}xms;
-			#	    }
-
-			#	    # workaround for OMSA 7.1.0 bug
-			#	    if ($snmp && $sysinfo{om} eq '7.1.0') {
-			#		if    ($cert == 1) { $cert = 0; }
-			#		elsif ($cert == 0) { $cert = 1; }
-			#	    }
 		}
 
 		$count{pdisk}++;
@@ -1727,18 +1682,6 @@ sub check_physical_disks {
 			push @states, 'Failure Predicted';
 			++$stack if $stack == 0;
 		}
-		#	# Special case: Uncertified disk
-		#	if (!$cert) {
-		#	    # Functional non Dell disks get a Non-Critical status
-		#	    if (($state eq 'Online' or $state eq 'Ready' or $state eq 'Non-RAID')
-		#		and $status eq 'Non-Critical' and not $fpred
-		#		and blacklisted('pdisk_cert', $nexus)) {
-		#		--$stack;
-		#	    }
-		#	    else {
-		#		push @states, 'Not Certified';
-		#	    }
-		#	}
 		# Special case: Foreign disk
 		if ($state eq 'Foreign' and blacklisted('pdisk_foreign', $nexus)) {
 			--$stack;
@@ -1786,7 +1729,6 @@ sub check_physical_disks {
 sub check_virtual_disks {
 	return if $#controllers == -1;
 
-	my $name = undef;
 	my $nexus = undef;
 	my $dev = undef;
 	my $state = undef;
@@ -1795,21 +1737,18 @@ sub check_virtual_disks {
 	my $layout = undef;
 	my $size = undef;
 	my $progr = undef;
-	my $ctrl = undef;
 	my @output = ();
 
 	if ($snmp) {
 		my %vdisk_oid
 			= (
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.3'  => 'virtualDiskDeviceName', # replaced by virtualDiskName
-			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.2'  => 'virtualDiskName', # was virtualDiskDeviceName
+			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.2'  => 'virtualDiskName',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.4'  => 'virtualDiskState',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.6'  => 'virtualDiskSizeInMB', # was virtualDiskLengthInMB
+			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.6'  => 'virtualDiskSizeInMB',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.13' => 'virtualDiskLayout',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.20' => 'virtualDiskComponentStatus',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.30' => 'virtualDiskOperationalState',
-			# '1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.21' => 'virtualDiskNexusID', # replaced by virtualDiskFQDD
-			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.35' => 'virtualDiskFQDD', # was virtualDiskNexusID
+			'1.3.6.1.4.1.674.10892.5.5.1.20.140.1.1.35' => 'virtualDiskFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
@@ -1923,11 +1862,7 @@ sub check_cache_battery {
 			= (
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.4'  => 'batteryState',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.6'  => 'batteryComponentStatus',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.9'  => 'batteryNexusID', # replaced by batteryFQDD
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.10' => 'batteryPredictedCapacity',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.12' => 'batteryLearnState',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.16.1.5'  => 'batteryConnectionControllerNumber',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.20' => 'batteryFQDD', # was batteryNexusID
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.15.1.20' => 'batteryFQDD',
 		);
 		my $result = undef;
 		$result = $snmp_session->get_entries(-columns => [ keys %bat_oid ]);
@@ -1956,9 +1891,6 @@ sub check_cache_battery {
 		if ($snmp) {
 			$status = get_snmp_status($out->{batteryComponentStatus});
 			$state = get_hashval($out->{batteryState}, \%bat_state) || 'Unknown state';
-			#$learn  = get_hashval($out->{batteryLearnState}, \%bat_learn_state) || 'Unknown learn state';
-			#$pred   = get_hashval($out->{batteryPredictedCapacity}, \%bat_pred_cap) || 'Unknown predicted capacity status';
-			#$ctrl   = $snmp_controller{$out->{batteryConnectionControllerNumber}};
 			$nexus = convert_nexus(($out->{batteryFQDD} || 9999));
 			$id = $nexus;
 			$id =~ s{\A \d+:(\d+) \z}{$1}xms;
@@ -2034,7 +1966,6 @@ sub check_enclosures {
 	my $nexus = undef;
 	my $name = undef;
 	my $state = undef;
-	my $rollup = undef;
 	my $status = undef;
 	my $firmware = undef;
 	my $ctrl = undef;
@@ -2049,11 +1980,10 @@ sub check_enclosures {
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.2'  => 'enclosureName',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.4'  => 'enclosureState',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.24' => 'enclosureComponentStatus',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.25' => 'enclosureNexusID', # replaced by enclosureFQDD
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.26' => 'enclosureFirmwareVersion',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.31' => 'enclosureOccupiedSlotCount',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.32' => 'enclosureTotalSlots',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.47' => 'enclosureFQDD', # was enclosureNexusID
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.3.1.47' => 'enclosureFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
@@ -2144,23 +2074,17 @@ sub check_enclosure_fans {
 	my $name = undef;
 	my $state = undef;
 	my $status = undef;
-	my $comp_stat = undef;
 	my $speed = undef;
-	my $encl_id = undef;
-	my $encl_name = undef;
 	my @output = ();
 
 	if ($snmp) {
 		my %fan_oid
 			= (
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.2'  => 'enclosureFanName',            # was fanName
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.4'  => 'enclosureFanState',           # was fanState
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.11' => 'enclosureFanProbeCurrValue',  # was fanProbeCurrValue
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.15' => 'enclosureFanComponentStatus', # was fanComponentStatus
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.16' => 'fanNexusID', # replaced by enclosureFanFQDD
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.8.1.4'  => 'fanConnectionEnclosureName',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.8.1.5'  => 'fanConnectionEnclosureNumber',
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.20' => 'enclosureFanFQDD', # was fanNexusID
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.2'  => 'enclosureFanName',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.4'  => 'enclosureFanState',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.11' => 'enclosureFanProbeCurrValue',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.15' => 'enclosureFanComponentStatus',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.7.1.20' => 'enclosureFanFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
@@ -2202,8 +2126,6 @@ sub check_enclosure_fans {
 			$state = get_hashval($out->{enclosureFanState}, \%fan_state) || 'Unknown state';
 			$status = get_snmp_status($out->{enclosureFanComponentStatus});
 			$speed = $out->{enclosureFanProbeCurrValue} || 'N/A';
-			#$encl_name = $out->{fanConnectionEnclosureName} || 'Unknown enclosure';
-			#$encl_id   = $snmp_enclosure{$out->{fanConnectionEnclosureNumber}}{nexus};
 			$nexus = convert_nexus(($out->{enclosureFanFQDD} || 9999));
 		}
 
@@ -2236,8 +2158,6 @@ sub check_enclosure_pwr {
 	my $name = undef;
 	my $state = undef;
 	my $status = undef;
-	my $encl_id = undef;
-	my $encl_name = undef;
 	my @output = ();
 
 	if ($snmp) {
@@ -2246,18 +2166,13 @@ sub check_enclosure_pwr {
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.2'  => 'enclosurePowerSupplyName',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.4'  => 'enclosurePowerSupplyState',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.9'  => 'enclosurePpowerSupplyComponentStatus',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.10' => 'powerSupplyNexusID', # replaced by enclosurePowerSupplyFQDD
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.15' => 'enclosurePowerSupplyFQDD', # was powerSupplyNexusID
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.10.1.4' => 'powerSupplyConnectionEnclosureName',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.10.1.5' => 'powerSupplyConnectionEnclosureNumber',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.15' => 'enclosurePowerSupplyFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
 			my $powerSupplyTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.9';
-			#my $powerSupplyConnectionTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.10';
 
 			$result = $snmp_session->get_table(-baseoid => $powerSupplyTable);
-			#my $ext = $snmp_session->get_table(-baseoid => $powerSupplyConnectionTable);
 		}
 		else {
 			$result = $snmp_session->get_entries(-columns => [ keys %ps_oid ]);
@@ -2286,8 +2201,6 @@ sub check_enclosure_pwr {
 			$name = $out->{enclosurePowerSupplyName} || 'Unknown PSU';
 			$state = get_hashval($out->{enclosurePowerSupplyState}, \%ps_state) || 'Unknown state';
 			$status = get_snmp_status($out->{enclosurePpowerSupplyComponentStatus});
-			#	    $encl_id   = $snmp_enclosure{$out->{powerSupplyConnectionEnclosureNumber}}{nexus};
-			#	    $encl_name = $out->{powerSupplyConnectionEnclosureName} || 'Unknown enclosure';
 			$nexus = convert_nexus(($out->{enclosurePowerSupplyFQDD} || 9999));
 		}
 
@@ -2313,13 +2226,10 @@ sub check_enclosure_temp {
 	my $state = undef;
 	my $status = undef;
 	my $reading = undef;
-	my $unit = undef;
 	my $max_warn = undef;
 	my $max_crit = undef;
 	my $min_warn = undef;
 	my $min_crit = undef;
-	my $encl_id = undef;
-	my $encl_name = undef;
 	my @output = ();
 
 	if ($snmp) {
@@ -2327,25 +2237,19 @@ sub check_enclosure_temp {
 			= (
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.2'  => 'enclosureTemperatureProbeName',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.4'  => 'enclosureTemperatureProbeState',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.6'  => 'temperatureProbeUnit',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.7'  => 'enclosureTemperatureProbeMinWarning',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.8'  => 'enclosureTemperatureProbeMinCritical',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.9'  => 'enclosureTemperatureProbeMaxWarning',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.10' => 'enclosureTemperatureProbeMaxCritical',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.11' => 'enclosureTemperatureProbeCurValue',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.13' => 'enclosureTemperatureProbeComponentStatus',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.14' => 'temperatureProbeNexusID', # replaced by enclosureTemperatureProbeFQDD
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.15' => 'enclosureTemperatureProbeFQDD', # was temperatureProbeNexusID
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.12.1.4'  => 'temperatureConnectionEnclosureName',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.12.1.5'  => 'temperatureConnectionEnclosureNumber',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.11.1.15' => 'enclosureTemperatureProbeFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
 			my $temperatureProbeTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.11';
-			#my $temperatureConnectionTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.12';
 
 			$result = $snmp_session->get_table(-baseoid => $temperatureProbeTable);
-			#my $ext = $snmp_session->get_table(-baseoid => $temperatureConnectionTable);
 		}
 		else {
 			$result = $snmp_session->get_entries(-columns => [ keys %temp_oid ]);
@@ -2374,14 +2278,11 @@ sub check_enclosure_temp {
 			$name = $out->{enclosureTemperatureProbeName} || 'Unknown temp probe';
 			$state = get_hashval($out->{enclosureTemperatureProbeState}, \%temp_state) || 'Unknown state';
 			$status = get_snmp_probestatus($out->{enclosureTemperatureProbeComponentStatus});
-			#$unit      = $out->{temperatureProbeUnit} || 'Unknown unit';
 			$reading = $out->{enclosureTemperatureProbeCurValue} || '[N/A]';
 			$max_warn = $out->{enclosureTemperatureProbeMaxWarning} || '[N/A]';
 			$max_crit = $out->{enclosureTemperatureProbeMaxCritical} || '[N/A]';
 			$min_warn = $out->{enclosureTemperatureProbeMinWarning} || '[N/A]';
 			$min_crit = $out->{enclosureTemperatureProbeMinCritical} || '[N/A]';
-			#$encl_id   = $snmp_enclosure{$out->{temperatureConnectionEnclosureNumber}}{nexus};
-			#$encl_name = $out->{temperatureConnectionEnclosureName} || 'Unknown enclosure';
 			$nexus = convert_nexus(($out->{enclosureTemperatureProbeFQDD} || 9999));
 		}
 
@@ -2480,9 +2381,6 @@ sub check_enclosure_temp {
 			$index =~ s{\A Temperature\sProbe\s(\d+) \z}{$1}gxms;
 			my $legacy_name = $name;
 			$legacy_name =~ s{\A Temperature\sProbe\s(\d+) \z}{temp_$1}gxms;
-			#	    my $legacy_label = lc "enclosure_${encl_id}_${legacy_name}";
-			#	    my $legacy_mini = $legacy_label;
-			#            $legacy_mini =~ s{enclosure_(.+?)_temp_(.+?)}{e$1t$2}xms;
 			push @perfdata, {
 				type  => 'E',
 				id    => $opt{perfdata} eq 'minimal' ? "${index}" : "temp_${index}",
@@ -2510,8 +2408,6 @@ sub check_enclosure_emms {
 	my $name = undef;
 	my $state = undef;
 	my $status = undef;
-	my $encl_id = undef;
-	my $encl_name = undef;
 	my @output = ();
 
 	if ($snmp) {
@@ -2520,19 +2416,13 @@ sub check_enclosure_emms {
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.13.1.2'  => 'enclosureManagementModuleName',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.13.1.4'  => 'enclosureManagementModuleState',
 			'1.3.6.1.4.1.674.10892.5.5.1.20.130.13.1.11' => 'enclosureManagementModuleComponentStatus',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.13.1.12' => 'enclosureManagementModuleNexusID', # replaced by enclosureManagementModuleFQDD
-			'1.3.6.1.4.1.674.10892.5.5.1.20.130.13.1.15' => 'enclosureManagementModuleFQDD', # was enclosureManagementModuleNexusID
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.14.1.4'  => 'enclosureManagementModuleConnectionEnclosureName',
-			#'1.3.6.1.4.1.674.10892.5.5.1.20.130.14.1.5'  => 'enclosureManagementModuleConnectionEnclosureNumber',
+			'1.3.6.1.4.1.674.10892.5.5.1.20.130.13.1.15' => 'enclosureManagementModuleFQDD',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
 			my $enclosureManagementModuleTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.13';
-			#my $enclosureManagementModuleConnectionTable = '1.3.6.1.4.1.674.10892.5.5.1.20.130.14';
 
 			$result = $snmp_session->get_table(-baseoid => $enclosureManagementModuleTable);
-			#my $ext = $snmp_session->get_table(-baseoid => $enclosureManagementModuleConnectionTable);
-
 		}
 		else {
 			$result = $snmp_session->get_entries(-columns => [ keys %emms_oid ]);
@@ -2561,8 +2451,6 @@ sub check_enclosure_emms {
 			$name = $out->{enclosureManagementModuleName} || 'Unknown EMM';
 			$state = get_hashval($out->{enclosureManagementModuleState}, \%emms_state) || 'Unknown state';
 			$status = get_snmp_status($out->{enclosureManagementModuleComponentStatus});
-			#$encl_id   = $snmp_enclosure{$out->{enclosureManagementModuleConnectionEnclosureNumber}}{nexus};
-			#$encl_name = $out->{enclosureManagementModuleConnectionEnclosureName} || 'Unknown enclosure';
 			$nexus = convert_nexus(($out->{enclosureManagementModuleFQDD} || 9999));
 		}
 
@@ -2593,7 +2481,6 @@ sub check_memory {
 	my $status = undef;
 	my $location = undef;
 	my $size = undef;
-	my $modes = undef;
 	my @failures = ();
 	my @output = ();
 
@@ -2604,8 +2491,6 @@ sub check_memory {
 			'1.3.6.1.4.1.674.10892.5.4.1100.50.1.5.1'  => 'memoryDeviceStatus',
 			'1.3.6.1.4.1.674.10892.5.4.1100.50.1.8.1'  => 'memoryDeviceLocationName',
 			'1.3.6.1.4.1.674.10892.5.4.1100.50.1.14.1' => 'memoryDeviceSize',
-			#'1.3.6.1.4.1.674.10892.5.4.1100.50.1.20.1' => 'memoryDeviceFailureModes',
-			#'1.3.6.1.4.1.674.10892.5.4.1100.50.1.27.1' => 'memoryDeviceExtendedSize', # is memoryDeviceCurrentOperatingSpeed in iSM, so not used
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
@@ -2644,15 +2529,6 @@ sub check_memory {
 			$status = get_snmp_status($out->{memoryDeviceStatus});
 			$location = $out->{memoryDeviceLocationName} || 'Unknown location';
 			$size = (sprintf '%d GB', ($out->{memoryDeviceSize} || 0) / 1024 / 1024);
-			#	    $modes    = $out->{memoryDeviceFailureModes} || -9999;
-			#	    if ($modes > 0) {
-			#		foreach my $mask (sort keys %failure_mode) {
-			#		    if (($modes & $mask) != 0) { push @failures, $failure_mode{$mask}; }
-			#		}
-			#	    }
-			#	    elsif ($modes == -9999) {
-			#		push @failures, q{ERROR: Failure modes not available via SNMP};
-			#	    }
 		}
 		$location =~ s{\A \s*(.*?)\s* \z}{$1}xms;
 
@@ -2710,8 +2586,6 @@ sub check_fans {
 			'1.3.6.1.4.1.674.10892.5.4.700.12.1.5.1'  => 'coolingDeviceStatus',
 			'1.3.6.1.4.1.674.10892.5.4.700.12.1.6.1'  => 'coolingDeviceReading',
 			'1.3.6.1.4.1.674.10892.5.4.700.12.1.8.1'  => 'coolingDeviceLocationName',
-			#'1.3.6.1.4.1.674.10892.5.4.700.12.1.10.1' => 'coolingDeviceUpperCriticalThreshold',
-			#'1.3.6.1.4.1.674.10892.5.4.700.12.1.11.1' => 'coolingDeviceUpperNonCriticalThreshold',
 			'1.3.6.1.4.1.674.10892.5.4.700.12.1.12.1' => 'coolingDeviceLowerNonCriticalThreshold',
 			'1.3.6.1.4.1.674.10892.5.4.700.12.1.13.1' => 'coolingDeviceLowerCriticalThreshold',
 		);
@@ -2787,7 +2661,6 @@ sub check_powersupplies {
 	my $index = undef;
 	my $status = undef;
 	my $type = undef;
-	my $err_type = undef;
 	my $state = undef;
 	my @states = ();
 	my @output = ();
@@ -2799,7 +2672,6 @@ sub check_powersupplies {
 			'1.3.6.1.4.1.674.10892.5.4.600.12.1.5.1'  => 'powerSupplyStatus',
 			'1.3.6.1.4.1.674.10892.5.4.600.12.1.7.1'  => 'powerSupplyType',
 			'1.3.6.1.4.1.674.10892.5.4.600.12.1.11.1' => 'powerSupplySensorState',
-			#'1.3.6.1.4.1.674.10892.5.4.600.12.1.12.1' => 'powerSupplyConfigurationErrorType',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
@@ -2844,13 +2716,6 @@ sub check_powersupplies {
 		64 => 'Configuration error',
 	);
 
-	#    my %ps_config_error_type
-	#      = (
-	#	 1 => 'Vendor mismatch',
-	#	 2 => 'Revision mismatch',
-	#	 3 => 'Processor missing',
-	#	);
-
 	PS:
 	foreach my $out (@output) {
 		if ($snmp) {
@@ -2859,7 +2724,6 @@ sub check_powersupplies {
 			$index = ($out->{powerSupplyIndex} || 10000) - 1;
 			$status = get_snmp_status($out->{powerSupplyStatus});
 			$type = get_hashval($out->{powerSupplyType}, \%ps_type) || 'Unknown type';
-			#$err_type = get_hashval($out->{powerSupplyConfigurationErrorType}, \%ps_config_error_type);
 
 			# get the combined state from the StatusReading OID
 			my $raw_state = $out->{powerSupplySensorState} || 0;
@@ -2868,11 +2732,6 @@ sub check_powersupplies {
 					push @states, $ps_state{$mask};
 				}
 			}
-
-			# If configuration error, also include the error type
-			#	    if (defined $err_type) {
-			#		push @states, $err_type;
-			#	    }
 
 			# Finally, construct the state string
 			$state = join q{, }, @states;
@@ -2908,7 +2767,6 @@ sub check_temperatures {
 	my $min_warn = undef;
 	my $min_crit = undef;
 	my $type = undef;
-	my $discrete = undef;
 	my @output = ();
 
 	# Getting custom temperature thresholds (user option)
@@ -2927,14 +2785,12 @@ sub check_temperatures {
 			'1.3.6.1.4.1.674.10892.5.4.700.20.1.11.1' => 'temperatureProbeUpperNonCriticalThreshold',
 			'1.3.6.1.4.1.674.10892.5.4.700.20.1.12.1' => 'temperatureProbeLowerNonCriticalThreshold',
 			'1.3.6.1.4.1.674.10892.5.4.700.20.1.13.1' => 'temperatureProbeLowerCriticalThreshold',
-			#'1.3.6.1.4.1.674.10892.5.4.700.20.1.16.1' => 'temperatureProbeDiscreteReading',
 		);
 		# this didn't work well for some reason
 		my $result = $snmp_session->get_entries(-columns => [ keys %temp_oid ]);
 
 		# Getting values using the table
 		my $temperatureProbeTable = '1.3.6.1.4.1.674.10892.5.4.700.20';
-		#my $result = $snmp_session->get_table(-baseoid => $temperatureProbeTable);
 
 		if (!defined $result) {
 			printf "SNMP ERROR [temperatures]: %s.\n", $snmp_session->error;
@@ -3537,7 +3393,6 @@ sub check_pwrmonitoring {
 			'1.3.6.1.4.1.674.10892.5.4.600.30.1.8.1'  => 'amperageProbeLocationName',
 			'1.3.6.1.4.1.674.10892.5.4.600.30.1.10.1' => 'amperageProbeUpperCriticalThreshold',
 			'1.3.6.1.4.1.674.10892.5.4.600.30.1.11.1' => 'amperageProbeUpperNonCriticalThreshold',
-			#'1.3.6.1.4.1.674.10892.5.4.600.30.1.16.1' => 'amperageProbeDiscreteReading',
 		);
 		my $result = undef;
 		if ($opt{use_get_table}) {
