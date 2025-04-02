@@ -1,4 +1,5 @@
-#check_openmanage
+# check_ism
+TODO: Rewrite this file for check_ism and decide on a lot of things inherited from check_openmanage. Please see the header in check_ism for current known caveats and issues.
 
 **Dell™ Server Hardware Monitoring with OpenManage™ and Nagios®**
 

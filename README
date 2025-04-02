@@ -1,3 +1,4 @@
+TODO: Rewrite this file for check_ism and decide on a lot of things inherited from check_openmanage
 ================================
 README file for check_openmanage
 ================================
@@ -44,7 +45,6 @@ Storage components checked:
 * Physical drives
 * Logical drives
 * Cache batteries
-* Connectors (channels)
 * Enclosures
 * Enclosure fans
 * Enclosure power supplies
@@ -62,7 +62,6 @@ Chassis components checked:
 * Voltage probes
 * Power usage
 * Chassis intrusion
-* Removable flash media (SD cards)
 * Sane and not empty service tag (serial number)
 
 Other:
