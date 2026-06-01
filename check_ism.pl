@@ -2718,9 +2718,6 @@ sub check_temperatures {
 	# this didn't work well for some reason
 	my $result = $snmp_session->get_entries(-columns => [ keys %temp_oid ]);
 
-	# Getting values using the table
-	my $temperatureProbeTable = '1.3.6.1.4.1.674.10892.5.4.700.20';
-
 	if (!defined $result) {
 		printf "SNMP ERROR [temperatures]: %s.\n", $snmp_session->error;
 		$snmp_session->close;
