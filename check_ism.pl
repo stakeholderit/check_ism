@@ -3974,7 +3974,7 @@ else {
 
 	# Run through each message, sorted by severity level
 	ALERT:
-	foreach (sort {$a->[1] < $b->[1]} (@report_storage, @report_chassis, @report_other)) {
+	foreach (sort {$b->[1] <=> $a->[1]} (@report_storage, @report_chassis, @report_other)) {
 		my ($msg, $level, $nexus) = @{$_};
 		next ALERT if $level == $E_OK;
 
