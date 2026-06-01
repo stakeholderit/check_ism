@@ -271,7 +271,6 @@ if ($opt{version}) {
 	'amperage'      => 1, # check power consumption
 	'intrusion'     => 1, # check intrusion detection
 	'sdcard'        => 1, # check removable flash media (SD cards)
-	'alertlog'      => 0, # check the alert log
 	'esmlog'        => 0, # check the ESM log (hardware log)
 	'servicetag'    => 1, # check that the servicetag is sane
 );
@@ -343,11 +342,6 @@ if (defined $opt{linebreak}) {
 		'Critical'     => 0, # critical entries in ESM log
 		'Non-Critical' => 0, # warning entries in ESM log
 		'Ok'           => 0, # ok entries in ESM log
-	},
-	'alert' => {
-		'Critical'     => 0, # critical entries in alert log
-		'Non-Critical' => 0, # warning entries in alert log
-		'Ok'           => 0, # ok entries in alert log
 	},
 );
 
@@ -1170,7 +1164,6 @@ sub adjust_checks {
 	CHECK_KEY:
 	foreach (keys %check) {
 		next CHECK_KEY if $_ eq 'esmlog';   # not part of global status
-		next CHECK_KEY if $_ eq 'alertlog'; # not part of global status
 
 		if ($check{$_} == 0) {
 			# found something with checking turned off
@@ -3937,7 +3930,6 @@ if ($exit_code == $E_OK && defined $opt{only} && $opt{only} !~ m{\A critical|war
 		'batteries'  => $count{bat} == 0 ? 'OK - no batteries found' : "BATTERIES OK - $count{bat} batteries checked",
 		'amperage'   => $count{amp} == 0 ? 'OK - no power monitoring probes found' : "AMPERAGE OK - $count{amp} amperage (power monitoring) probes checked",
 		'intrusion'  => $count{intr} == 0 ? 'OK - no intrusion detection probes found' : "INTRUSION OK - $count{intr} intrusion detection probes checked",
-		'alertlog'   => 'OK - not supported via snmp',
 		'esmlog'     => "OK - ESM Log content: $count{esm}{Ok} ok, $count{esm}{'Non-Critical'} warning and $count{esm}{Critical} critical",
 		'sdcard'     => "SD CARDS OK - $count{sd} SD cards installed",
 		'servicetag' => sprintf 'ServiceTag OK: %s', $opt{hide_servicetag} ? 'XXXXXXX' : $sysinfo{serial},
