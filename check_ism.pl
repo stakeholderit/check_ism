@@ -270,7 +270,6 @@ if ($opt{version}) {
 	'batteries'     => 1, # check battery probes
 	'amperage'      => 1, # check power consumption
 	'intrusion'     => 1, # check intrusion detection
-	'sdcard'        => 1, # check removable flash media (SD cards)
 	'esmlog'        => 0, # check the ESM log (hardware log)
 	'servicetag'    => 1, # check that the servicetag is sane
 );
@@ -337,7 +336,6 @@ if (defined $opt{linebreak}) {
 	'cpu'   => 0, # number of CPUs
 	'bat'   => 0, # number of batteries
 	'power' => 0, # number of power supplies
-	'sd'    => 0, # number of SD cards
 	'esm'   => {
 		'Critical'     => 0, # critical entries in ESM log
 		'Non-Critical' => 0, # warning entries in ESM log
@@ -1121,7 +1119,7 @@ sub adjust_checks {
 
 		# adjust the check hash
 		if ($opt{only} eq 'chassis') {
-			map {$check{$_} = 1} qw(memory fans power temp cpu voltage sdcard
+			map {$check{$_} = 1} qw(memory fans power temp cpu voltage
 				batteries amperage intrusion);
 		}
 		else {
@@ -3924,7 +3922,6 @@ if ($exit_code == $E_OK && defined $opt{only} && $opt{only} !~ m{\A critical|war
 		'amperage'   => $count{amp} == 0 ? 'OK - no power monitoring probes found' : "AMPERAGE OK - $count{amp} amperage (power monitoring) probes checked",
 		'intrusion'  => $count{intr} == 0 ? 'OK - no intrusion detection probes found' : "INTRUSION OK - $count{intr} intrusion detection probes checked",
 		'esmlog'     => "OK - ESM Log content: $count{esm}{Ok} ok, $count{esm}{'Non-Critical'} warning and $count{esm}{Critical} critical",
-		'sdcard'     => "SD CARDS OK - $count{sd} SD cards installed",
 		'servicetag' => sprintf 'ServiceTag OK: %s', $opt{hide_servicetag} ? 'XXXXXXX' : $sysinfo{serial},
 	);
 
