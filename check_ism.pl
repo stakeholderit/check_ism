@@ -884,8 +884,8 @@ sub report {
 #
 sub snmp_initialize {
 	# Legal SNMP v3 protocols
-	my $snmp_v3_privprotocol = qr{\A des|aes|aes128|3des|3desde \z}xms;
-	my $snmp_v3_authprotocol = qr{\A md5|sha \z}xms;
+	my $snmp_v3_privprotocol = qr{\A des|aes|aes128|aes192|aes256|3des|3desde \z}xms;
+	my $snmp_v3_authprotocol = qr{\A md5|sha|sha224|sha256|sha384|sha512 \z}xms;
 
 	# Parameters to Net::SNMP->session()
 	my %param
@@ -942,7 +942,7 @@ sub snmp_initialize {
 			}
 			else {
 				print "SNMP ERROR: Unknown or invalid privprotocol [$opt{privprotocol}], "
-					. "must be one of [des|aes|aes128|3des|3desde]\n";
+					. "must be one of [des|aes|aes128|aes192|aes256|3des|3desde]\n";
 				exit $E_UNKNOWN;
 			}
 		}
@@ -954,7 +954,7 @@ sub snmp_initialize {
 			}
 			else {
 				print "SNMP ERROR: Unknown or invalid authprotocol [$opt{authprotocol}], "
-					. "must be one of [md5|sha]\n";
+					. "must be one of [md5|sha|sha224|sha256|sha384|sha512]\n";
 				exit $E_UNKNOWN;
 			}
 		}
