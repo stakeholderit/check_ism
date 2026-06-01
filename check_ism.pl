@@ -3141,8 +3141,6 @@ sub check_volts {
 	my $status = undef;
 	my $reading = undef;
 	my $location = undef;
-	my $max_crit = undef;
-	my $max_warn = undef;
 	my @output = ();
 
 	my %volt_oid
@@ -3180,8 +3178,6 @@ sub check_volts {
 			? sprintf('%.3f V', $out->{voltageProbeReading} / 1000)
 			: (get_hashval($out->{voltageProbeDiscreteReading}, \%volt_discrete_reading) || 'Unknown reading');
 		$location = $out->{voltageProbeLocationName} || 'Unknown location';
-		$max_crit = $out->{voltageProbeUpperCriticalThreshold} || 0;
-		$max_warn = $out->{voltageProbeUpperNonCriticalThreshold} || 0;
 
 		$count{volt}++;
 		next VOLT if blacklisted('volt', $index);
@@ -3216,8 +3212,8 @@ sub check_volts {
 				unit  => 'V',
 				label => $label,
 				value => $reading,
-				warn  => 0,
-				crit  => 0,
+				warn  => 0, # voltage threshold OIDs are not exposed by iSM - default to 0 to avoid breaking perfdata-handling
+				crit  => 0, # voltage threshold OIDs are not exposed by iSM - default to 0 to avoid breaking perfdata-handling
 			};
 		}
 	}
