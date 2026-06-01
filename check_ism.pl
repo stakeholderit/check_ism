@@ -2314,25 +2314,25 @@ sub check_enclosure_temp {
 			my $msg = sprintf '%s is critically high at %s %s',
 				$name, $reading, $opt{tempunit};
 			my $err = $snmp ? $probestatus2nagios{$status} : $status2nagios{$status};
-			report('chassis', $msg, $err, $nexus);
+			report('storage', $msg, $err, $nexus);
 		}
 		elsif ($status ne 'Ok' and $reading ne '[N/A]' and $max_warn ne '[N/A]' and $reading > $max_warn) {
 			my $msg = sprintf '%s is too high at %s %s',
 				$name, $reading, $opt{tempunit};
 			my $err = $snmp ? $probestatus2nagios{$status} : $status2nagios{$status};
-			report('chassis', $msg, $err, $nexus);
+			report('storage', $msg, $err, $nexus);
 		}
 		elsif ($status ne 'Ok' and $reading ne '[N/A]' and $min_crit ne '[N/A]' and $reading < $min_crit) {
 			my $msg = sprintf '%s in is critically low at %s %s',
 				$name, $reading, $opt{tempunit};
 			my $err = $snmp ? $probestatus2nagios{$status} : $status2nagios{$status};
-			report('chassis', $msg, $err, $nexus);
+			report('storage', $msg, $err, $nexus);
 		}
 		elsif ($status ne 'Ok' and $reading ne '[N/A]' and $min_warn ne '[N/A]' and $reading < $min_warn) {
 			my $msg = sprintf '%s is too low at %s %s',
 				$name, $reading, $opt{tempunit};
 			my $err = $snmp ? $probestatus2nagios{$status} : $status2nagios{$status};
-			report('chassis', $msg, $err, $nexus);
+			report('storage', $msg, $err, $nexus);
 		}
 		# Default
 		elsif ($status ne 'Ok') {
