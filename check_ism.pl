@@ -1,31 +1,37 @@
 #!/usr/bin/perl
 #
-# Nagios plugin
+# Nagios plugin for monitoring Dell server hardware status using Dell iDRAC Service Module (iSM) via SNMP.
 #
-# Monitor Dell server hardware status using Dell iDRAC Service Module (iSM) via SNMP.
-#
-# Known caveats (current as of v0.0.1-beta) are as follows:
+# Known caveats (current as of v0.1.0) are as follows:
 #  * Logic surrounding the battery check is not updated to reflect the "new" battery status that iSM exposes
 #    where learnstate is not available.
-#  * The plugin does not check for the presence of the iDRAC card itself, if the iSM service is running on
-#    the host or if the SNMP agent is enabled in the iDRAC settings.
-#  * There are probably leftovers from old support for Dell OpenManage Server Administrator (OMSA) that are
-#    not used, but still not removed.
 #  * The plugin does not check for any new OIDs that iSM might expose - it performs the same checks (if
 #    still available) that the original check_openmanage plugin did.
 #  * The plugin has been rewritten from the original check_openmanage plugin up against a PowerEdge R760
 #    connected to an PowerVault MD2460 via a PERC12 H965e controller (and the PERC12 H965e is never going to
 #    be supported by OMSA - the H965i is, but that's another story..), so we were forced to rewrite it for
 #    iSM otherwise we would be unable to get metrics about the H965e, the MD2460 shelf and the disks it
-#    contains.
+#    contains. It has also been verified to work with an PowerEdge XE7740 and R670s, so it should be safe for most 17th
+#    generation hardware.
 #
-#    It has not been tested on any other hardware yet, but please report back - especially if it works.
+# V0.1.0 release notes
+#  * A lot of cleanup - no longer allows for running locally (fully dependent on SNMP) along with a lot of other fixes.
+#    Please see individual commits prior to v0.1.0 commit).
+#  * Since iSM 6.1.0.0 no longer allows for Host-based SNMP Gets (it's mentioned in the "Dell iDRAC Service Module
+#    6.1.0.0 Release Notes" under "Changed features" available on https://www.dell.com/support/manuals/en-us/\
+#    idrac-service-module-6-0/ism_6.1.0.0_rn_pub/changed-features?guid=guid-47c9c40e-bad3-4ee8-af43-33015bf8d72d&lang=en-us),
+#    but the iDRAC UI still shows the enable/disable option for integrating it's proxy-line into snmpd.conf as in
+#    previous versions (v5.x) in the OS, the script now skips checking storage components based on
+#    the IDRAC-MIB-SMIv2::systemPowerState.0 (.1.3.6.1.4.1.674.10892.5.2.4.0) OID.
+#    This makes it possible to query the iDRACs SNMP service directly and not depend on the host OS.
+#  * Two new options that allows for reporting OK or WARN (instead of CRIT) depending on systemPowerState has been added as
+#    we can't be sure if the OS is running or not, and whether or not it's intended.
 #
-#    No special OIDs for this particular hardware has been added, so it should work on any Dell server with
-#    iSM, but it might be, that some OIDs are not available on all hardware.
+#    Addition hardware has been verified to be working - users are still encouraged to report back and especially if it works.
+#    Thanks to those who have reported back - it's much appreciated!
 #
 # Copyright (C) 2008-2017 Trond H. Amundsen
-# Copyright (C) 2025 Jens Dueholm Christensen
+# Copyright (C) 2025-2026 Jens Dueholm Christensen
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -71,7 +77,7 @@ $SIG{__WARN__} = sub {push @perl_warnings, [ @_ ];};
 # Version and similar info
 $NAME = 'check_ism';
 $ORG_NAME = 'check_openmanage';
-$VERSION = '0.0.1-beta';
+$VERSION = '0.1.0';
 $AUTHOR = 'Jens Dueholm Christensen';
 $ORG_AUTHOR = 'Trond H. Amundsen';
 $CONTACT = 'jedc@ramboll.com';
@@ -130,6 +136,11 @@ CHECK CONTROL AND BLACKLISTING:
    --check              Fine-tune which components are checked
    --no-storage         Don't check storage
    --vdisk-critical     Make any alerts on virtual disks critical
+   --poweroff-ok        Return OK (default=CRITICAL) when storage check is
+                        skipped because the system is powered off. If this flag
+                        by mistake is set along with --poweroff-warning, it wins
+   --poweroff-warning   Return WARNING (default=CRITICAL) when storage check
+                        is skipped because the system is powered off
 
 For more information and advanced options, see the manual page or URL:
   https://github.com/trondham/check_openmanage
@@ -140,7 +151,7 @@ END_HELP
 $LICENSE = <<"END_LICENSE";
 $NAME $VERSION
 Copyright (C) 2008-2017 $ORG_AUTHOR
-Copyright (C) 2025 $AUTHOR
+Copyright (C) 2025-2026 $AUTHOR
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
@@ -193,6 +204,8 @@ END_LICENSE
 	'use_get_table'   => 0,        # hack for SNMPv3 on Windows with net-snmp
 	'hide_servicetag' => 0,        # hidden servicetag
 	'vdisk_critical'  => 0,        # make vdisk alerts critical
+	'poweroff_ok'     => 0,        # return OK when storage skipped due to power off
+	'poweroff_warning' => 0,       # return WARNING when storage skipped due to power off
 	'maxMsgSize'      => 65535,    # Max SNMP octetsize
 );
 
@@ -239,6 +252,8 @@ GetOptions('b|blacklist=s' => \@{$opt{blacklist}},
 	'use-get_table'        => \$opt{use_get_table},
 	'hide-servicetag'      => \$opt{hide_servicetag},
 	'vdisk-critical'       => \$opt{vdisk_critical},
+	'poweroff-ok'          => \$opt{poweroff_ok},
+	'poweroff-warning'     => \$opt{poweroff_warning},
 ) or do {
 	print $USAGE;
 	exit $E_UNKNOWN
@@ -1029,6 +1044,17 @@ sub snmp_detect_blade {
 		return;
 	}
 	return;
+}
+
+#
+# Returns the systemPowerState value (4 = powered on), or undef if unavailable
+#
+sub get_system_power_state {
+	# IDRAC-MIB-SMIv2::systemPowerState.0
+	my $oid = '1.3.6.1.4.1.674.10892.5.2.4.0';
+	my $result = $snmp_session->get_request(-varbindlist => [ $oid ]);
+	return undef unless defined $result;
+	return $result->{$oid};
 }
 
 #
@@ -3772,8 +3798,21 @@ if ($global) {
 }
 
 # Do multiple selected checks
-if ($check{storage}) {check_storage();}
 if ($check{memory}) {check_memory();}
+if ($check{storage}) {
+	my $pwr = get_system_power_state();
+	if (!defined $pwr || $pwr == 4) {
+		check_storage();
+	}
+	else {
+		my $msg = sprintf q{Storage check skipped: system is not powered on [System: '%s%s', SN: '%s', %d GB ram (%d dimms)]},
+			$sysinfo{model}, $sysinfo{rev}, $sysinfo{serial}, $count{mem}, $count{dimm};
+		my $poweroff_level = $opt{poweroff_ok} ? $E_OK
+			: $opt{poweroff_warning}            ? $E_WARNING
+			:                                     $E_CRITICAL;
+		report('storage', $msg, $poweroff_level);
+	}
+}
 if ($check{fans}) {check_fans();}
 if ($check{power}) {check_powersupplies();}
 if ($check{temp}) {check_temperatures();}
