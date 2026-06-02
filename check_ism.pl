@@ -3926,7 +3926,13 @@ else {
 		# Prefix with one-letter nagios level if specified with option '--short-state'
 		$msg = (substr $reverse_exitcode{$level}, 0, 1) . ": $msg" if $opt{shortstate};
 
-		($c++ == 0) ? print $msg : print $linebreak, $msg;
+		if ($c++ == 0) {
+			print $reverse_exitcode{$level} . ' - ' unless $opt{state} || $opt{shortstate};
+			print $msg;
+		}
+		else {
+			print $linebreak, $msg;
+		}
 
 		$nagios_alert_count{$reverse_exitcode{$level}}++;
 	}
