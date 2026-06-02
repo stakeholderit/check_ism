@@ -2148,7 +2148,7 @@ sub check_enclosure_pwr {
 		= (
 		'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.2'  => 'enclosurePowerSupplyName',
 		'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.4'  => 'enclosurePowerSupplyState',
-		'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.9'  => 'enclosurePpowerSupplyComponentStatus',
+		'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.9'  => 'enclosurePowerSupplyComponentStatus',
 		'1.3.6.1.4.1.674.10892.5.5.1.20.130.9.1.15' => 'enclosurePowerSupplyFQDD',
 	);
 	my $result = undef;
@@ -2181,7 +2181,7 @@ sub check_enclosure_pwr {
 	foreach my $out (@output) {
 		$name = $out->{enclosurePowerSupplyName} || 'Unknown PSU';
 		$state = get_hashval($out->{enclosurePowerSupplyState}, \%ps_state) || 'Unknown state';
-		$status = get_snmp_status($out->{enclosurePpowerSupplyComponentStatus});
+		$status = get_snmp_status($out->{enclosurePowerSupplyComponentStatus});
 		$nexus = convert_nexus(($out->{enclosurePowerSupplyFQDD} || 9999));
 
 		next PS if blacklisted('encl_ps', $nexus);
