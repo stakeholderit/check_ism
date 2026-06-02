@@ -3805,8 +3805,10 @@ if ($check{storage}) {
 		check_storage();
 	}
 	else {
-		my $msg = sprintf q{Storage check skipped: system is not powered on [System: '%s%s', SN: '%s', %d GB ram (%d dimms)]},
-			$sysinfo{model}, $sysinfo{rev}, $sysinfo{serial}, $count{mem}, $count{dimm};
+		my $msg = q{Storage check skipped: system is not powered on};
+		$msg .= sprintf q{ [System: '%s%s', SN: '%s', %d GB ram (%d dimms)]},
+			$sysinfo{model}, $sysinfo{rev}, $sysinfo{serial}, $count{mem}, $count{dimm}
+			unless $opt{debug};
 		my $poweroff_level = $opt{poweroff_ok} ? $E_OK
 			: $opt{poweroff_warning}            ? $E_WARNING
 			:                                     $E_CRITICAL;
